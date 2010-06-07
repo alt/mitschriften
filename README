@@ -1,0 +1,9 @@
+This is a XeLaTeX class to write down a lecture in LaTeX on-the-fly. It is intended for high-speed writers who have access to many unicode-characters.
+
+Most of LaTeXs markup is transposed to fancy unicode characters to enable high efficiency when writing.
+
+The output will /not/ be a beatiful document, but some kind of personal notes of a lecture that contains all important formatting.
+
+Compile the dtx file with xelatex to get the class file. Put the latter one anywhere where TeX can find it. The class is only usable with an up-to-date (TeXlive2009) XeLaTeX format. A port to luaLaTeX might happen.
+
+This work is distributed under the LPPL license.

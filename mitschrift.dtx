@@ -1,0 +1,340 @@
+% \iffalse
+%% File: mitschrift.dtx by Arno Trautmann, mail: arno dot trautmann at gmx dot de
+%<*driver>
+\def\nameofplainTeX{plain}
+\ifx\fmtname\nameofplainTeX\else
+  \expandafter\begingroup
+\fi
+\input docstrip.tex
+\askforoverwritefalse
+\preamble
+
+EXPERIMENTAL CODE
+
+Do not distribute this file without also distributing the
+source files specified above.
+
+Do not distribute a modified version of this file under the same name.
+
+\endpreamble
+\postamble
+\endpostamble
+\keepsilent
+\generate{\file{mitschrift.cls}{\from{mitschrift.dtx}{class}}}
+
+\ifx\fmtname\nameofplainTeX
+  \expandafter\endbatchfile
+\else
+  \expandafter\endgroup
+\fi
+\ProvidesFile{mitschrift.cls}
+  [26.11.2009 v0.1a class for taking notes during lectures]
+\documentclass{gmdocc}
+\usepackage{
+  hyperref,
+  polyglossia
+}
+\usepackage[draft,index,marginclue]{fixme}
+\hypersetup{
+  pdfborder= 0 0 0,
+  colorlinks=true,
+  linkcolor=blue
+}
+\setmainlanguage{english}
+\setmainfont{TeX Gyre Pagella}
+
+\title{|mitschrift|}
+\author{Arno Trautmann\\ \href{mailto:arno.trautmann@gmx.de}{arno.trautmann@gmx.de}}
+\def\marginpartt{\scriptsize\ttfamily}
+\begin{document}
+\maketitle
+\begin{abstract}
+This is the class |mitschrift|. It’s purpose is to provide a very fast way of typesetting text during lectures or practical groups. This is achieved by using unicode-symbols for many things (especially mathmode), using |\obeylines| through the whole document to make |\\| unneccessary and so forth. It should be nearly a replacement for writing by hand. The advantage of this class: One will never again loose his papers with important information. Actually, that was the reason why I decided to write this class.
+\end{abstract}
+
+
+\section{Implementation}
+\DocInput{mitschrift.dtx}
+\end{document}
+%</driver>
+%
+%<*class>
+% \fi
+% 
+% \section{Usage}
+% \DescribeMacro{\check}
+% This class is not usable at all …
+% \section{Implementation}
+% \subsection{Page Layout}
+% We will use the KOMA-class |scrartcl|, the fonts of the Linux Libertine-Projekt by loading |xelibertine| and of course |amsmath|:
+% \begin{macrocode}
+\LoadClass{scrartcl}
+\PassOptionsToClass{fleqn}{scrartcl}
+\Requireclass{
+  amsmath,
+  babel,
+  braket,
+  geometry,
+  marginnote,
+  relsize,
+  siunitx,
+  todonotes,
+  xltxtra
+}
+% \end{macrocode}
+% \subsection{Structurizing}
+% You can structure your notes: For every lecture/practical course, you just write |\lecture{05.06.2008}| or whenever you attend the lecture. For a practical course, you say |\course[sheet 1]{05.06.2008}|, where the optional argument gives the number of the sheet that is discussed in that course. But you also can say |\sheet{}| to start a new sheet in your notes; the optional argument of |\course| will do exactly this. If you omit the optional parameter, no |\sheet| will be set.
+% \begin{macrocode}
+\newcounter{lecture}
+\newcounter{course}
+\newcounter{sheet}
+\newcounter{exercise}[sheet]
+\newcounter{question}[sheet]
+\newcounter{subexercise}[exercise]
+\newcounter{subsubexercise}[subexercise]
+
+\newcommand\lecture[1]{\marginnote{lecture at #1}\stepcounter{lecture}}
+\newcommand\course[1]{\marginnote{practical course, #1}\stepcounter{course}}
+\newcommand\sheet[2][\thesheet]{
+  \stepcounter{sheet}
+  \setcounter{sheet}{#1}
+  \section*{Sheet \thesheet: #2}
+}
+\newcommand\exercise[2][\theexercise]{
+  \stepcounter{exercise}
+  \setcounter{exercise}{#1}
+  \subsubsection*{Exercise \theexercise: #2}
+}
+\newcommand\question[2][\thequestion]{
+  \stepcounter{question}
+  \setcounter{question}{#1}
+  \subsubsection*{Question \thequestion: #2}
+}
+\let\ex\exercise
+\newcommand\subexercise[1][\thesubexercise]{
+  \setcounter{subexercise}{#1}
+  \stepcounter{subexercise}
+  \paragraph{#1.:}\ \newline
+}
+\let\subex\subexercise
+\let\esubex\relax
+
+\newcommand\subsubexercise[1]{\stepcounter{subsubexercise}\thesubsubexercise: #1}
+% \end{macrocode}
+
+% \subsection{Helper Macros}
+% The following definitions are needed to define everything else. Taken from the |alttex|-class.
+% \begin{macrocode}
+\def\add@special#1{%
+  \rem@special{#1}%
+  \expandafter\gdef\expandafter\dospecials\expandafter
+{\dospecials \do #1}%
+  \expandafter\gdef\expandafter\@sanitize\expandafter
+{\@sanitize \@makeother #1}}
+\def\rem@special#1{%
+  \def\do##1{%
+    \ifnum`#1=`##1 \else \noexpand\do\noexpand##1\fi}%
+  \xdef\dospecials{\dospecials}%
+  \begingroup
+    \def\@makeother##1{%
+      \ifnum`#1=`##1 \else \noexpand\@makeother\noexpand##1\fi}%
+    \xdef\@sanitize{\@sanitize}%
+  \endgroup}
+% \end{macrocode}
+% \subsection{Math Mode}
+% We define a lot of math symbols using |altmath|:
+% \begin{macro}{altmath}
+% This code is taken from the class |alttex| which you can find on github\footnote{\url{}}
+% \begin{macrocode}
+\makeatletter
+\def\altmath#1#2{%
+  \expandafter\ifx\csname cc\string#1\endcsname\relax
+    \add@special{#1}%
+    \expandafter
+    \xdef\csname cc\string#1\endcsname{\the\catcode`#1}%
+    \begingroup
+      \catcode`\~\active  \lccode`\~`#1%
+      \lowercase{%
+      \global\expandafter\let
+         \csname ac\string#1\endcsname~%
+      \expandafter\gdef\expandafter~\expandafter{\ensuremath{#2}}}%
+    \endgroup
+    \global\catcode`#1\active
+  \else
+  \fi
+}
+\makeatother
+% \end{macrocode}
+% \end{macro}
+% With this macro, a whole list of math symbols can be defined:
+% \begin{macrocode}
+\def\indexi{_1}
+\def\indexii{_2}
+\altmath ₁\indexi
+\altmath ₂\indexii
+\altmath α\alpha
+\altmath β\beta
+\altmath γ\gamma
+\altmath δ\delta
+\altmath ε\epsilon
+\altmath χ\chi
+\altmath μ\mu
+\altmath ν\nu
+\altmath φ\phi
+\altmath ϕ\varphi
+\altmath ϱ\varrho
+\altmath σ\sigma
+\altmath π\pi
+\altmath τ\tau
+\altmath ψ\psi
+\altmath Θ\theta
+\altmath ϑ\vartheta
+\altmath ω\omega
+\altmath Γ\Gamma
+\altmath Δ\Delta
+\altmath Ω\Omega
+\altmath Ψ\Psi
+
+\altmath ⇒\Rightarrow
+\altmath ⇐\Leftarrow
+\altmath ⇔\Leftrightarrow
+
+\altmath ∮\oint
+\altmath ∫\int
+\altmath Σ\sum
+\altmath ∃\exists
+\altmath ∀\forall
+\altmath √\sqrt
+
+\let\openbrace(
+\let\closebrace)
+\def\leftopenbrace{\ifmmode \left\openbrace \else \openbrace \fi}
+\def\rightclosebrace{\ifmmode \right\closebrace \else\closebrace \fi }
+\catcode`\(13
+\catcode`\)13
+\let(\leftopenbrace
+\let)\rightclosebrace
+
+\let\oldstar*
+\def\conjugate{^\oldstar}
+\def\d{\mathrm{d}}
+\def\del#1#2{\frac{\partial #1}{\partial #2}}
+\def\delt{\frac{\partial}{\partial t}}
+\def\total#1#2{\frac{\d #1}{\d #2}}
+\def\half{\textstyle{\frac 12}}
+\def\tr#1{Spur(#1)}
+\def\Sp{\text{Sp}}
+\def\Ry{\text{Ry}}
+\def\inter{_\text{int}}
+
+\def\altdagger{^\dagger}
+\altmath ¤\altdagger
+
+\let\v\vec
+\def\vec#1{(\begin{matrix} #1\end{matrix})}
+\def\bmat{(\begin{matrix}}
+\def\emat{\end{matrix})}
+\let\oldenum\enumerate
+\let\oldendenum\endenumerate
+\def\enumerate{\oldenum}
+\def\hbar{\bar h}
+\def\one{\pmb 1}
+
+\def\Annahme{\underline{Ann: }}
+\def\Bew{\text{\underline{Bew.:}}}
+% \end{macrocode}
+% \subsection{Text Mode}
+% As we want to copy from the black board verbatim, there will be much more linebreaks than in a normal text. To avoid cascades of |\\|, we use |\obeylines|. Yes, this is not good \TeX{} at all, but we won’t copy much continuous text but.keywords and formula. For the same reason, we unset the parindent.
+% \begin{macrocode}
+\AtBeginDocument{\obeylines\setlength{\parindent}{0cm}}
+% \end{macrocode}
+% \subsection{Additional Markup}
+% If there is something important that is not written on the blackboard or just a note by yourself, use |\note|:
+% \begin{macrocode}
+\def\note#1{\marginnote{\it #1}}
+\def\ok{o.\,k.}
+% \end{macrocode}
+% \subsection{itemize-hack}
+% This is the itemize-hack from the |alttex| class. Not working well, but good enough.
+% \begin{macrocode}
+\def\outside{o}
+\def\inside{i}
+\let\insideitemizei\outside
+\let\insideitemizeii\outside
+% \end{macrocode}
+% The end of itemizei and itemizeii:
+% \begin{macrocode}
+\def\altenditemize{
+  \if\altlastitem 1%
+    \let\altlastitem0%
+  \else%
+    \end{itemize}%
+    \let\insideitemizei\outside%
+  \fi%
+}
+
+\begingroup
+  \lccode`\~=`\^^M%
+\lowercase{%
+  \endgroup
+  \def\makeenteractive{%
+    \catcode`\^^M=\active
+    \let~\altenditemize
+}%
+}
+
+\def\newitemi{%
+  \ifx\insideitemizei\inside%
+    \let\altlastitem1%
+    \expandafter\item%
+  \else%
+    \begin{itemize}%
+    \let\insideitemizei\inside%
+    \let\altlastitem1%
+    \makeenteractive%
+    \expandafter\item%
+  \fi
+}
+
+\def\newitemii{
+  \ifx\insideitemizeii\inside
+    \expandafter\item%
+  \else
+    \begin{itemize}
+      \let\insideitemizeii\inside
+      \expandafter\item%
+  \fi
+}
+\makeatletter
+\def\makeitemi#1{%
+  \expandafter\ifx\csname cc\string#1\endcsname\relax
+    \add@special{#1}%
+    \expandafter
+    \xdef\csname cc\string#1\endcsname{\the\catcode`#1}%
+    \begingroup
+      \catcode`\~\active  \lccode`\~`#1%
+      \lowercase{%
+      \global\expandafter\let
+         \csname ac\string#1\endcsname~%
+      \expandafter\gdef\expandafter~\expandafter{\newitemi}}%
+    \endgroup
+    \global\catcode`#1\active
+  \else
+  \fi
+}
+\makeatother
+\AtBeginDocument{\makeitemi{•}}
+% \end{macrocode}
+% \subsubsection{description}
+% We want an easy way to write lists that describe elements. That is somewhat like an |\item[\bf item]|, and that is just the way it is implemented. Use it as an environment: |\begin{mydescription} •[a] •[b] \end{mydescription}|
+% \begin{macrocode}
+\def\mydescription{
+\bgroup
+\let\descriptionolditem•
+\def\descitem[##1]{\descriptionolditem[\bf ##1]}
+\let•\descitem
+}
+\def\endmydescription{\egroup}
+% \end{macrocode}
+% \Finale
+\endinput

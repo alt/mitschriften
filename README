@@ -6,4 +6,9 @@ The output will /not/ be a beatiful document, but some kind of personal notes of
 
 Compile the dtx file with xelatex to get the class file. Put the latter one anywhere where TeX can find it. The class is only usable with an up-to-date (TeXlive2009) XeLaTeX format. A port to luaLaTeX might happen.
 
+Please feel free to mail me any suggestions, bugfixes, feature requests or anything else:
+
+arno dot trautmann at gmx dot de.
+
+
 This work is distributed under the LPPL license.
